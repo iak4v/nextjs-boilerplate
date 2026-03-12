@@ -3,7 +3,7 @@ import tryCatch from "@/lib/try-catch";
 import { DynamoDB } from "@aws-sdk/client-dynamodb";
 import { Dynamode, attribute, TableManager, Entity as DEntity } from "dynamode";
 
-// TODO
+// TODO: Change this to your DynamoDB table name
 const DB_TABLE_NAME: string = undefined;
 
 const db = process.env.NODE_ENV === "production"

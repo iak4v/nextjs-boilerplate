@@ -8,9 +8,9 @@ import {
     PutObjectCommandInput
 } from "@aws-sdk/client-s3";
 
-// TODO
+// TODO: Change these to your S3 bucket name
 const S3_BUCKET_NAME: string = undefined;
-// TODO
+// TODO: Change these to your S3 bucket region
 const S3_BUCKET_REGION: string = undefined;
 
 const s3Client = new S3Client({
