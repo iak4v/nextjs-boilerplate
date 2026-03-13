@@ -1,4 +1,5 @@
-import envvar from "@/lib/env-var";
+import { S3_BUCKET_NAME, S3_BUCKET_REGION } from "@/constants";
+import { envvar } from "@/lib";
 import {
     S3Client,
     DeleteObjectCommand,
@@ -8,13 +9,10 @@ import {
     PutObjectCommandInput
 } from "@aws-sdk/client-s3";
 
-// TODO: Change these to your S3 bucket name
-const S3_BUCKET_NAME: string = undefined;
-// TODO: Change these to your S3 bucket region
-const S3_BUCKET_REGION: string = undefined;
+const bucketName = `${S3_BUCKET_NAME}-${process.env.NODE_ENV === "production" ? "prod" : "dev"}-s3`
 
 const s3Client = new S3Client({
-    region: S3_BUCKET_REGION, // ap-south-1
+    region: S3_BUCKET_REGION,
     credentials: {
         accessKeyId: envvar("AWS_ACCESS_KEY_ID"),
         secretAccessKey: envvar("AWS_SECRET_ACCESS_KEY")
@@ -22,10 +20,10 @@ const s3Client = new S3Client({
 })
 
 export const getS3Object = (key: string) =>
-    s3Client.send(new GetObjectCommand({ Bucket: S3_BUCKET_NAME, Key: key }));
+    s3Client.send(new GetObjectCommand({ Bucket: bucketName, Key: key }));
 
 export const getS3ObjectUrl = (s3Key: string) => {
-    const prefix = `https://${S3_BUCKET_NAME}.s3.${S3_BUCKET_REGION}.amazonaws.com/`;
+    const prefix = `https://${bucketName}.s3.${S3_BUCKET_REGION}.amazonaws.com/`;
     return prefix + s3Key;
 };
 
@@ -37,7 +35,7 @@ export const getS3ObjectUrl = (s3Key: string) => {
  */
 export async function uploadToS3(file: Blob, s3Key: string, content_type: string) {
     const params = {
-        Bucket: S3_BUCKET_NAME,
+        Bucket: bucketName,
         Key: s3Key,
         Body: (await file.arrayBuffer()) as unknown as Buffer,
         ContentType: content_type ?? file.type,
@@ -57,7 +55,7 @@ export const deleteFromS3 = (...keys: (string | undefined)[]) => {
         if (!key) continue;
 
         const params = {
-            Bucket: S3_BUCKET_NAME,
+            Bucket: bucketName,
             Key: key,
         } satisfies DeleteObjectCommandInput;
 

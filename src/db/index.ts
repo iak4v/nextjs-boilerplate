@@ -1,23 +1,20 @@
-import envvar from "@/lib/env-var";
-import tryCatch from "@/lib/try-catch";
+import { DDB_TABLE_NAME, DDB_TABLE_REGION } from "@/constants";
+import { envvar, tryCatch } from "@/lib";
 import { DynamoDB } from "@aws-sdk/client-dynamodb";
 import { Dynamode, attribute, TableManager, Entity as DEntity } from "dynamode";
 
-// TODO: Change this to your DynamoDB table name
-const DB_TABLE_NAME: string = undefined;
+const IS_LOCAL_DB = false; // if db is running on docker locally
 
-const db = process.env.NODE_ENV === "production"
-    ? new DynamoDB({
-        region: "ap-south-1",
-        credentials: {
-            accessKeyId: envvar("AWS_ACCESS_KEY_ID"),
-            secretAccessKey: envvar("AWS_SECRET_ACCESS_KEY")
-        }
-    })
-    : undefined;
+const db = new DynamoDB({
+    region: DDB_TABLE_REGION,
+    credentials: {
+        accessKeyId: envvar("AWS_ACCESS_KEY_ID"),
+        secretAccessKey: envvar("AWS_SECRET_ACCESS_KEY")
+    }
+});
 
-if (db) Dynamode.ddb.set(db)
-else Dynamode.ddb.local();
+if (IS_LOCAL_DB && process.env.NODE_ENV !== "production") Dynamode.ddb.local();
+else Dynamode.ddb.set(db)
 
 export type EntityProps = {
     pk?: string,
@@ -28,7 +25,7 @@ export type EntityProps = {
     lsi2sk?: string,
     lsi3sk?: string,
     lsi4sk?: string,
-    lsi5sk?: string,
+    // lsi5sk?: string,
     created_at?: Date,
     updated_at?: Date,
 }
@@ -80,9 +77,6 @@ export class Entity extends DEntity {
     @attribute.lsi.sortKey.string({ indexName: 'lsi4' })
     lsi4sk?: string;
 
-    @attribute.lsi.sortKey.string({ indexName: 'lsi5' })
-    lsi5sk?: string;
-
     @attribute.date.string()
     updated_at?: Date;
 
@@ -99,7 +93,6 @@ export class Entity extends DEntity {
         this.lsi2sk = props.lsi2sk;
         this.lsi3sk = props.lsi3sk;
         this.lsi4sk = props.lsi4sk;
-        this.lsi5sk = props.lsi5sk;
 
         this.created_at = props.created_at ?? new Date();
         this.updated_at = props.updated_at ?? new Date();
@@ -112,7 +105,7 @@ export class Entity extends DEntity {
 }
 
 export const EntityTableManager = new TableManager(Entity, {
-    tableName: `${DB_TABLE_NAME}-${db ? "prod" : "dev"}-ddb-table`,
+    tableName: `${DDB_TABLE_NAME}-${process.env.NODE_ENV === 'production' ? "prod" : "dev"}-ddb`,
     partitionKey: "pk",
     sortKey: "sk",
     indexes: {
@@ -124,7 +117,6 @@ export const EntityTableManager = new TableManager(Entity, {
         lsi2: { sortKey: 'lsi2sk' },
         lsi3: { sortKey: 'lsi3sk' },
         lsi4: { sortKey: 'lsi4sk' },
-        lsi5: { sortKey: 'lsi5sk' },
     },
     createdAt: "created_at",
     updatedAt: "updated_at"
